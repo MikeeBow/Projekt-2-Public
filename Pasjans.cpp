@@ -96,9 +96,9 @@ public:
     void run();
 
     bool moveCardToFoundation(int fromColumn, const string& cardStr);
-    bool moveCardBetweenColumns(int from, int to);
     bool moveTopWasteToColumn(int column);
     bool isValidMove(const Card& fromCard, const Card& toCard) const;
+    bool moveWasteCardToFoundation(const string& cardStr, int foundationIndex);
 };
 
 void Game::initGame() {
@@ -129,14 +129,31 @@ void Game::generateRandomCards() {
     static vector<Card> savedCards;
     static size_t currentIndex = 0;
 
-    if (deck.stockEmpty()) {
-        if (currentIndex >= savedCards.size()) {
-            currentIndex = 0;
+    if (deck.stockEmpty() && currentIndex >= savedCards.size()) {
+        shuffle(savedCards.begin(), savedCards.end(), mt19937(static_cast<unsigned int>(time(0))));
+
+        while (!savedCards.empty()) {
+            Card card = savedCards.back();
+            card.setFaceUp(false);
+            deck.drawCard();
+            deck.popWasteTop();
+            deck.drawCard();
+            deck.popWasteTop();
+
+            savedCards.pop_back();
         }
 
-        randomCards.clear();
-        for (int i = 0; i < 3 && currentIndex < savedCards.size(); ++i, ++currentIndex) {
-            randomCards.push_back(savedCards[currentIndex]);
+        currentIndex = 0;
+        savedCards.clear();
+    }
+
+    if (deck.stockEmpty()) {
+
+        if (currentIndex < savedCards.size()) {
+            randomCards.clear();
+            for (int i = 0; i < 3 && currentIndex < savedCards.size(); ++i, ++currentIndex) {
+                randomCards.push_back(savedCards[currentIndex]);
+            }
         }
         return;
     }
@@ -153,8 +170,10 @@ void Game::generateRandomCards() {
             savedCards.push_back(card);
         }
     }
+
     currentIndex = savedCards.size();
 }
+
 
 bool Game::isValidMove(const Card& fromCard, const Card& toCard) const {
     bool result = false;
@@ -164,7 +183,7 @@ bool Game::isValidMove(const Card& fromCard, const Card& toCard) const {
         result = (fromRed != toRed) && (fromCard.getRank() == toCard.getRank() - 1);
         });
 
-    t.join(); // czekamy na zakończenie wątku
+    t.join();
     return result;
 }
 
@@ -199,6 +218,37 @@ bool Game::moveCardToFoundation(int fromColumn, const string& cardStr) {
         tableau[fromColumn].pop_back();
         if (!tableau[fromColumn].empty() && !tableau[fromColumn].back().isFaceUp())
             tableau[fromColumn].back().flip();
+        return true;
+    }
+
+    return false;
+}
+
+bool Game::moveWasteCardToFoundation(const string& cardStr, int foundationIndex) {
+    if (foundationIndex < 0 || foundationIndex > 3) return false;
+
+    auto it = find_if(randomCards.begin(), randomCards.end(), [&](const Card& c) {
+        return c.toString() == cardStr;
+        });
+
+    if (it == randomCards.end()) return false;
+
+    Card card = *it;
+
+    if (card.getSuit() != foundationIndex) return false;
+
+    if (foundations[foundationIndex].empty()) {
+        if (card.getRank() == 1) {
+            foundations[foundationIndex].push(card);
+            randomCards.erase(it);
+            return true;
+        }
+        return false;
+    }
+
+    if (card.getRank() == foundations[foundationIndex].top().getRank() + 1) {
+        foundations[foundationIndex].push(card);
+        randomCards.erase(it);
         return true;
     }
 
@@ -295,6 +345,16 @@ void Game::run() {
         string cardStr;
         if (iss >> from >> cardStr >> to) {
             if (from == 0) {
+                if (to >= 9 && to <= 12) {
+                    if (moveWasteCardToFoundation(cardStr, to - 8)) {
+                        display();
+                    }
+                    else {
+                        cout << "Nie można przenieść tej karty z talii pomocniczej do fundamentu.\n";
+                    }
+                    continue;
+                }
+
                 auto it = find_if(randomCards.begin(), randomCards.end(), [&](const Card& c) {
                     return c.toString() == cardStr;
                     });

@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{4ac30b52-00dd-44c9-ac6a-06616500537a}</ProjectGuid>
-    <RootNamespace>ConsoleApplication6</RootNamespace>
+    <ProjectGuid>{2ef71034-db90-4797-adfa-18128ab15c87}</ProjectGuid>
+    <RootNamespace>Pasjans</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -127,7 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleApplication6.cpp" />
+    <ClCompile Include="Pasjans.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
